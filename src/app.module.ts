@@ -10,6 +10,7 @@ import { CategoryModule } from "./modules/category/category.module";
 import { ClassificationModule } from "./modules/classification/classification.module";
 import { HealthModule } from "./modules/health/health.module";
 import { ImportModule } from "./modules/import/import.module";
+import { RecordModule } from "./modules/record/record.module";
 
 /**
  * Composition root of the one process: configuration, tuning settings, logs, the database,
@@ -36,6 +37,7 @@ export class AppModule {
         HealthModule,
         CategoryModule,
         ImportModule,
+        RecordModule,
         ClassificationModule,
       ],
       providers: [{ provide: APP_GUARD, useClass: ApiKeyGuard }],
