@@ -11,6 +11,7 @@ import { ClassificationModule } from "./modules/classification/classification.mo
 import { HealthModule } from "./modules/health/health.module";
 import { ImportModule } from "./modules/import/import.module";
 import { RecordModule } from "./modules/record/record.module";
+import { RecoveryModule } from "./modules/recovery/recovery.module";
 import { ReviewModule } from "./modules/review/review.module";
 
 /**
@@ -40,6 +41,7 @@ export class AppModule {
         ImportModule,
         RecordModule,
         ReviewModule,
+        RecoveryModule,
         ClassificationModule,
       ],
       providers: [{ provide: APP_GUARD, useClass: ApiKeyGuard }],
