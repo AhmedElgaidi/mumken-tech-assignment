@@ -1,8 +1,14 @@
 import { Global, Module } from "@nestjs/common";
+import { ClassificationResultRepository } from "../../infrastructure/repositories/classification/classification-result.repository";
+import { RecordLeaseRepository } from "../../infrastructure/repositories/classification/record-lease.repository";
 import { SqlDbModule } from "../../infrastructure/sql-db.module";
 import { CategoryModule } from "../category/category.module";
 import { CLASSIFIER } from "./constants/worker/classifier.token";
 import { ClassifierFactory } from "./factories/classifier.factory";
+import { ClassificationProcessor } from "./processors/classification.processor";
+import { AttemptFailureService } from "./services/attempt-failure.service";
+import { AutomaticResultService } from "./services/automatic-result.service";
+import { ClaimFailureService } from "./services/claim-failure.service";
 import { ClassificationJobService } from "./services/classification-job.service";
 
 /**
@@ -15,9 +21,18 @@ import { ClassificationJobService } from "./services/classification-job.service"
   providers: [
     { provide: CLASSIFIER, useFactory: () => ClassifierFactory.create() },
     ClassificationJobService,
+    RecordLeaseRepository,
+    ClassificationResultRepository,
+    ClaimFailureService,
+    AutomaticResultService,
+    AttemptFailureService,
+    ClassificationProcessor,
   ],
   exports: [
     ClassificationJobService,
+    ClassificationProcessor,
+    RecordLeaseRepository,
+    ClassificationResultRepository,
   ],
 })
 export class ClassificationModule {}
