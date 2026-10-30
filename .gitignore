@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.env
+*.tsbuildinfo
+submission.zip
+submission.bundle
+.env.*
+!.env.example

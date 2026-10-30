@@ -1,0 +1,8 @@
+/** Unit tests: run beside the file they cover with mocked collaborators, no containers. */
+module.exports = {
+  rootDir: "..",
+  testEnvironment: "node",
+  testMatch: ["<rootDir>/src/**/*.spec.ts"],
+  transform: { "^.+\\.ts$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.json" }] },
+  moduleFileExtensions: ["ts", "js", "json"],
+};
