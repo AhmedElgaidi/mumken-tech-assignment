@@ -1,6 +1,8 @@
 import { Global, Module } from "@nestjs/common";
 import { SqlDbModule } from "../../infrastructure/sql-db.module";
 import { CategoryModule } from "../category/category.module";
+import { CLASSIFIER } from "./constants/worker/classifier.token";
+import { ClassifierFactory } from "./factories/classifier.factory";
 import { ClassificationJobService } from "./services/classification-job.service";
 
 /**
@@ -11,6 +13,7 @@ import { ClassificationJobService } from "./services/classification-job.service"
 @Module({
   imports: [SqlDbModule, CategoryModule],
   providers: [
+    { provide: CLASSIFIER, useFactory: () => ClassifierFactory.create() },
     ClassificationJobService,
   ],
   exports: [
