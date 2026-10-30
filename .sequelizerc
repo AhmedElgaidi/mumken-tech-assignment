@@ -1,0 +1,15 @@
+const path = require('path');
+
+// Local runs read `.env` like the app does; compose and tests pass the variables directly.
+try {
+  process.loadEnvFile();
+} catch {
+  // No `.env` file: the variables come from the environment.
+}
+
+module.exports = {
+  config: path.resolve('src/infrastructure/schema/config', 'sequelize-cli-config.js'),
+  'migrations-path': path.resolve('src/infrastructure/schema', 'migrations'),
+  // No `seeders-path`: reference rows are seeded in-process at boot by
+  // `src/infrastructure/services/sql-db/category-seeder.service.ts`, never by `sequelize-cli db:seed`.
+};
