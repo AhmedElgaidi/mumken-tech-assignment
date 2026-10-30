@@ -9,6 +9,7 @@ import { SqlDbModule } from "./infrastructure/sql-db.module";
 import { CategoryModule } from "./modules/category/category.module";
 import { ClassificationModule } from "./modules/classification/classification.module";
 import { HealthModule } from "./modules/health/health.module";
+import { ImportModule } from "./modules/import/import.module";
 
 /**
  * Composition root of the one process: configuration, tuning settings, logs, the database,
@@ -34,6 +35,7 @@ export class AppModule {
         QueueProducerModule,
         HealthModule,
         CategoryModule,
+        ImportModule,
         ClassificationModule,
       ],
       providers: [{ provide: APP_GUARD, useClass: ApiKeyGuard }],
