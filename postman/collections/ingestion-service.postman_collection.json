@@ -1,0 +1,756 @@
+{
+  "info": {
+    "name": "Data Ingestion and Classification Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "One folder per requirement. Run R1 first: it stores importId; list requests store recordId and currentClassificationId. Mock triggers in titles: [fail-once], [fail-transient], [fail-permanent], [review], [unknown-category]."
+  },
+  "variable": [
+    {
+      "key": "importId",
+      "value": ""
+    },
+    {
+      "key": "recordId",
+      "value": ""
+    },
+    {
+      "key": "currentClassificationId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "R1 Submit records",
+      "item": [
+        {
+          "name": "Submit a batch (with triggers)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"records\": [\n    {\n      \"externalId\": \"demo-1\",\n      \"title\": \"Court rules on licence regulation for factories\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    },\n    {\n      \"externalId\": \"demo-2\",\n      \"title\": \"[fail-once] Hospital opens vaccine clinic\",\n      \"description\": \"Health ministry campaign\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    },\n    {\n      \"externalId\": \"demo-3\",\n      \"title\": \"[review] Market update\",\n      \"description\": \"Prices\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    },\n    {\n      \"externalId\": \"demo-4\",\n      \"title\": \"[fail-permanent] Unreadable item\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    },\n    {\n      \"externalId\": \"demo-5\",\n      \"title\": \"[unknown-category] Horoscope\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    },\n    {\n      \"externalId\": \"demo-6\",\n      \"title\": \"[fail-transient] Provider always down\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["const b = pm.response.json();", "if (b.id) pm.collectionVariables.set('importId', b.id);"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Empty batch → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"records\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "Not JSON → 415",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports"]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "R2 Invalid records",
+      "item": [
+        {
+          "name": "Mixed valid and invalid → field errors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"records\": [\n    {\n      \"externalId\": \"demo-v1\",\n      \"title\": \"Football league final\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    },\n    {\n      \"title\": \"missing fields\",\n      \"date\": \"2026-02-30\"\n    },\n    {\n      \"externalId\": \"demo-v2\",\n      \"title\": \"Museum festival\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\",\n      \"author\": \"ignored field\"\n    },\n    \"not an object\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["const b = pm.response.json();", "if (b.id) pm.collectionVariables.set('importId', b.id);"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid items of the import",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports/{{importId}}/items?outcome=INVALID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports", "{{importId}}", "items"],
+              "query": [
+                {
+                  "key": "outcome",
+                  "value": "INVALID"
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "R3 Duplicates",
+      "item": [
+        {
+          "name": "Same keys again (source case/space differ) → duplicates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"records\": [\n    {\n      \"externalId\": \"demo-1\",\n      \"title\": \"Court rules on licence regulation for factories\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \" GOV-NEWS \",\n      \"date\": \"2026-10-25\"\n    },\n    {\n      \"externalId\": \"demo-1\",\n      \"title\": \"Changed title\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    },\n    {\n      \"externalId\": \"demo-7\",\n      \"title\": \"School exam results\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    },\n    {\n      \"externalId\": \"demo-7\",\n      \"title\": \"School exam results\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Idempotent submit (send twice: second is a replay)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "postman-fixed-key-1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"records\": [\n    {\n      \"externalId\": \"demo-idem\",\n      \"title\": \"University budget approved\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Same key, different body → 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "postman-fixed-key-1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"records\": [\n    {\n      \"externalId\": \"demo-idem-2\",\n      \"title\": \"Other body\",\n      \"description\": \"Inspection campaign under the new licence regulation\",\n      \"source\": \"gov-news\",\n      \"date\": \"2026-10-25\"\n    }\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "R4 Progress",
+      "item": [
+        {
+          "name": "Import status and progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports/{{importId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports", "{{importId}}"]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "All items of the import",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports/{{importId}}/items?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports", "{{importId}}", "items"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "R5 Records",
+      "item": [
+        {
+          "name": "List records (newest date first)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Filter by source, category, status, dates, title",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records?source=gov-news&status=CLASSIFIED,NEEDS_REVIEW&dateFrom=2026-10-01&dateTo=2026-10-31&q=court",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records"],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "gov-news"
+                },
+                {
+                  "key": "status",
+                  "value": "CLASSIFIED,NEEDS_REVIEW"
+                },
+                {
+                  "key": "dateFrom",
+                  "value": "2026-10-01"
+                },
+                {
+                  "key": "dateTo",
+                  "value": "2026-10-31"
+                },
+                {
+                  "key": "q",
+                  "value": "court"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Records of one import",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records?importId={{importId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records"],
+              "query": [
+                {
+                  "key": "importId",
+                  "value": "{{importId}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Bad filter → 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records?status=DONE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "DONE"
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "R6 Record detail",
+      "item": [
+        {
+          "name": "List and remember the first record",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records?importId={{importId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records"],
+              "query": [
+                {
+                  "key": "importId",
+                  "value": "{{importId}}"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "if (d && d.length) { pm.collectionVariables.set('recordId', d[0].id); pm.collectionVariables.set('currentClassificationId', d[0].currentClassificationId || ''); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Record with classification, history, attempts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records/{{recordId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records", "{{recordId}}"]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "R7 Review queue",
+      "item": [
+        {
+          "name": "Records needing review (stores the first)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records?status=NEEDS_REVIEW",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "NEEDS_REVIEW"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "if (d && d.length) { pm.collectionVariables.set('recordId', d[0].id); pm.collectionVariables.set('currentClassificationId', d[0].currentClassificationId || ''); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "R8 Correct and approve",
+      "item": [
+        {
+          "name": "Approve the automatic result → 201 (repeat → 200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records/{{recordId}}/review/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records", "{{recordId}}", "review", "approve"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewedBy\": \"reviewer-1\",\n  \"expectedCurrentClassificationId\": \"{{currentClassificationId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh the record's current classification",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records?status=CLASSIFIED&importId={{importId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "CLASSIFIED"
+                },
+                {
+                  "key": "importId",
+                  "value": "{{importId}}"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "if (d && d.length) { pm.collectionVariables.set('recordId', d[0].id); pm.collectionVariables.set('currentClassificationId', d[0].currentClassificationId || ''); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Correct the category → 201 (original stays in history)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records/{{recordId}}/classifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records", "{{recordId}}", "classifications"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryCode\": \"health\",\n  \"reason\": \"The item is about clinics\",\n  \"reviewedBy\": \"reviewer-1\",\n  \"expectedCurrentClassificationId\": \"{{currentClassificationId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Correct again with the old id → 409 STALE_CLASSIFICATION",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records/{{recordId}}/classifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records", "{{recordId}}", "classifications"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryCode\": \"sports\",\n  \"reason\": \"x\",\n  \"reviewedBy\": \"reviewer-2\",\n  \"expectedCurrentClassificationId\": \"{{currentClassificationId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "R9 Recover failed records",
+      "item": [
+        {
+          "name": "Failed records of the import (stores the first)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records?status=FAILED&importId={{importId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "FAILED"
+                },
+                {
+                  "key": "importId",
+                  "value": "{{importId}}"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "if (d && d.length) { pm.collectionVariables.set('recordId', d[0].id); pm.collectionVariables.set('currentClassificationId', d[0].currentClassificationId || ''); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retry the import's retryable failures",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports/{{importId}}/retry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports", "{{importId}}", "retry"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isForced\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Retry again → requeued 0",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports/{{importId}}/retry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports", "{{importId}}", "retry"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isForced\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Retry including permanent failures",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/imports/{{importId}}/retry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "imports", "{{importId}}", "retry"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isForced\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Retry one record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records/{{recordId}}/retry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records", "{{recordId}}", "retry"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isForced\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Classify a FAILED record by hand",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/records/{{recordId}}/classifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "records", "{{recordId}}", "classifications"]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryCode\": \"other\",\n  \"reason\": \"No classifier can read it\",\n  \"reviewedBy\": \"reviewer-1\",\n  \"expectedCurrentClassificationId\": null\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Live",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health/live",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "health", "live"]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Ready",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health/ready",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "health", "ready"]
+            },
+            "description": ""
+          }
+        }
+      ]
+    }
+  ]
+}
